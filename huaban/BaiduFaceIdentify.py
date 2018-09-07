@@ -24,7 +24,7 @@ class BaiduFaceIdentify():
         headers = {
             'Content-Type' : 'application/json; charset=UTF-8'
         }
-        # 因为提交URL让baidu去读取图片，总是返回图片下载错了
+        # 因为提交URL让baidu去读取图片，总是返回图片下载错误
         # 所以我们这里将读取URL指向的图片，将图片转成BASE64编码，改用提交BASE64编码而不是提交URL
         pic_obj = urllib.request.urlopen(url_pic)
         pic_base64 = base64.b64encode(pic_obj.read())
