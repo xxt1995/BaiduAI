@@ -41,30 +41,43 @@ class BaiduVoiceToTxt():
         # 切换回工作目录
         os.chdir("..\\")
 
-    # 此函数用于将.\speech-vad-demo\output_pcm\下的文件的文件名的时间格式化成0:00:00形式
-    def format_time(self,seconds):
-        # 一个小时3600秒
-        hour_seconds = 60*60
-        # 一分钟60秒
-        minute_seconds = 60
+    # 此函数用于将.\speech-vad-demo\output_pcm\下的文件的文件名的时间格式化成0:00:00,000形式
+    def format_time(self, msecs):
+        # 一个小时毫秒数
+        hour_msecs = 60 * 60 * 1000
+        # 一分钟对应毫秒数
+        minute_msecs = 60 * 1000
+        # 一秒钟对应毫秒数
+        second_msecs = 1000
         # 文件名的时间是毫秒需要先转成秒。+500是为了四舍五入，//是整除
-        seconds = (seconds + 500) // 1000
+        # msecs = (msecs + 500) // 1000
         # 小时
-        hour = seconds // hour_seconds
-        # 扣除小时后剩余秒数
-        hour_left_seconds = seconds % hour_seconds
+        hour = msecs // hour_msecs
+        if hour < 10:
+            hour = f"0{hour}"
+        # 扣除小时后剩余毫秒数
+        hour_left_msecs = msecs % hour_msecs
         # 分钟
-        minute = hour_left_seconds // minute_seconds
+        minute = hour_left_msecs // minute_msecs
         # 如果不足10分钟那在其前补0凑成两位数格式
         if minute < 10:
             minute = f"0{minute}"
-        # 扣除分钟后剩余秒数
-        minute_left_seconds = hour_left_seconds % minute_seconds
+        # 扣除分钟后剩余毫秒数
+        minute_left_msecs = hour_left_msecs % minute_msecs
+        # 秒
+        second = minute_left_msecs // second_msecs
         # 如果秒数不足10秒，一样在其前补0凑足两位数格式
-        if minute_left_seconds < 10:
-            minute_left_seconds = f"0{minute_left_seconds}"
-        # 格式化成0:00:00形式，并返回
-        time_format = f"{hour}:{minute}:{minute_left_seconds}"
+        if second < 10:
+            second = f"0{second}"
+        # 扣除秒后剩余毫秒数
+        second_left_msecs = minute_left_msecs % second_msecs
+        # 如果不足10毫秒或100毫秒，在其前补0凑足三位数格式
+        if second_left_msecs < 10:
+            second_left_msecs = f"00{second_left_msecs}"
+        elif second_left_msecs < 100:
+            second_left_msecs = f"0{second_left_msecs}"
+        # 格式化成00:00:00,000形式，并返回
+        time_format = f"{hour}:{minute}:{second},{second_left_msecs}"
         return time_format
 
     # 此函数用于申请访问ai接口的access_token
@@ -123,6 +136,7 @@ if __name__ == "__main__":
     video_dir = ".\\video\\"
     all_video_file =[]
     all_file = os.listdir(video_dir)
+    subtitle_format = "{\\fscx75\\fscy75}"
     # 只接受.mp3格式文件。因为其他格式没研究怎么转成pcm才是符合接口要求的
     for filename in all_file:
         if ".mp3" in filename:
@@ -136,7 +150,7 @@ if __name__ == "__main__":
         i += 1
         print(f"当前转换{video_file_name}({i}/{video_file_num})")
         # 将音视翻译成的内容输出到同目录下同名.txt文件中
-        video_file_txt_path = f".\\video\\{video_file_name[:-4]}.txt"
+        video_file_txt_path = f".\\video\\{video_file_name[:-4]}.srt"
         # 以覆盖形式打开.txt文件
         video_file_txt_obj = open(video_file_txt_path,'w+')
 
@@ -169,15 +183,16 @@ if __name__ == "__main__":
                 # 以json形式读取返回结果
                 json_result = json.loads(response_text)
                 # 将音文转换结果写入.txt文件
-                video_file_txt_obj.writelines(f"音频时间{time_start_str}-{time_end_str}({j}/{pcm_file_num}):\r\n")
+                video_file_txt_obj.writelines(f"{j}\r\n")
+                video_file_txt_obj.writelines(f"{time_start_str} --> {time_end_str}\r\n")
                 if json_result['err_no'] == 0:
                     print(f"{time_start_str}-{time_end_str}({j}/{pcm_file_num})转换成功：{json_result['result'][0]}")
-                    video_file_txt_obj.writelines(f"{json_result['result'][0]}")
+                    video_file_txt_obj.writelines(f"{subtitle_format}{json_result['result'][0]}\r\n")
                 elif json_result['err_no'] == 3301:
                     print(f"{time_start_str}-{time_end_str}({j}/{pcm_file_num})音频质量过差无法识别")
-                    video_file_txt_obj.writelines(f"音频质量过差无法识别")
+                    video_file_txt_obj.writelines(f"{subtitle_format}音频质量过差无法识别\r\n")
                 else:
                     print(f"{time_start_str}-{time_end_str}({j}/{pcm_file_num})转换过程遇到其他错误")
-                    video_file_txt_obj.writelines(f"转换过程遇到其他错误")
+                    video_file_txt_obj.writelines(f"{subtitle_format}转换过程遇到其他错误\r\n")
                 video_file_txt_obj.writelines(f"\r\n")
         video_file_txt_obj.close()
