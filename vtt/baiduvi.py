@@ -96,7 +96,7 @@ class BaiduVoiceToTxt():
         return access_token
 
     # 此函数用于将.\speech-vad-demo\output_pcm\下的单个文件由语音转成文件
-    def transfer_voice_to_txt(self,access_token,filepath):
+    def transfer_voice_to_srt(self,access_token,filepath):
         # 百度语音识别接口
         url_voice_ident = "http://vop.baidu.com/server_api"
         # 接口规范，以json格式post数据
@@ -131,7 +131,7 @@ class BaiduVoiceToTxt():
 
 if __name__ == "__main__":
     # 实例化
-    baidu_voice_to_txt_obj = BaiduVoiceToTxt()
+    baidu_voice_to_srt_obj = BaiduVoiceToTxt()
     # 自己要进行音文转换的音视存放的文件夹
     video_dir = ".\\video\\"
     all_video_file =[]
@@ -150,19 +150,19 @@ if __name__ == "__main__":
         i += 1
         print(f"当前转换{video_file_name}({i}/{video_file_num})")
         # 将音视翻译成的内容输出到同目录下同名.txt文件中
-        video_file_txt_path = f".\\video\\{video_file_name[:-4]}.srt"
+        video_file_srt_path = f".\\video\\{video_file_name[:-4]}.srt"
         # 以覆盖形式打开.txt文件
-        video_file_txt_obj = open(video_file_txt_path,'w+')
+        video_file_srt_obj = open(video_file_srt_path,'w+')
 
         filepath = os.path.join(video_dir, video_file_name)
         # 调用change_file_format将mp3转成pcm格式
-        baidu_voice_to_txt_obj.change_file_format(filepath)
+        baidu_voice_to_srt_obj.change_file_format(filepath)
         # 将转换成的pcm文件切割成多个小于60秒的pcm文件
-        baidu_voice_to_txt_obj.devide_video()
+        baidu_voice_to_srt_obj.devide_video()
         # 获取token
-        access_token = baidu_voice_to_txt_obj.get_access_token()
+        access_token = baidu_voice_to_srt_obj.get_access_token()
         # 获取.\speech-vad-demo\output_pcm\目录下的文件列表
-        file_dir = baidu_voice_to_txt_obj.output_pcm_path
+        file_dir = baidu_voice_to_srt_obj.output_pcm_path
         all_pcm_file = os.listdir(file_dir)
         all_pcm_file.sort()
         j = 0
@@ -176,23 +176,23 @@ if __name__ == "__main__":
                 # 获取文件名上的时间
                 time_str = filename[10:-6]
                 time_str_dict = time_str.split("-")
-                time_start_str = baidu_voice_to_txt_obj.format_time(int(time_str_dict[0]))
-                time_end_str = baidu_voice_to_txt_obj.format_time(int(time_str_dict[1]))
+                time_start_str = baidu_voice_to_srt_obj.format_time(int(time_str_dict[0]))
+                time_end_str = baidu_voice_to_srt_obj.format_time(int(time_str_dict[1]))
                 print(f"当前转换{video_file_name}({i}/{video_file_num})-{time_start_str}-{time_end_str}({j}/{pcm_file_num})")
-                response_text = baidu_voice_to_txt_obj.transfer_voice_to_txt(access_token, filepath)
+                response_text = baidu_voice_to_srt_obj.transfer_voice_to_srt(access_token, filepath)
                 # 以json形式读取返回结果
                 json_result = json.loads(response_text)
-                # 将音文转换结果写入.txt文件
-                video_file_txt_obj.writelines(f"{j}\r\n")
-                video_file_txt_obj.writelines(f"{time_start_str} --> {time_end_str}\r\n")
+                # 将音文转换结果写入.srt文件
+                video_file_srt_obj.writelines(f"{j}\r\n")
+                video_file_srt_obj.writelines(f"{time_start_str} --> {time_end_str}\r\n")
                 if json_result['err_no'] == 0:
                     print(f"{time_start_str}-{time_end_str}({j}/{pcm_file_num})转换成功：{json_result['result'][0]}")
-                    video_file_txt_obj.writelines(f"{subtitle_format}{json_result['result'][0]}\r\n")
+                    video_file_srt_obj.writelines(f"{subtitle_format}{json_result['result'][0]}\r\n")
                 elif json_result['err_no'] == 3301:
                     print(f"{time_start_str}-{time_end_str}({j}/{pcm_file_num})音频质量过差无法识别")
-                    video_file_txt_obj.writelines(f"{subtitle_format}音频质量过差无法识别\r\n")
+                    video_file_srt_obj.writelines(f"{subtitle_format}音频质量过差无法识别\r\n")
                 else:
                     print(f"{time_start_str}-{time_end_str}({j}/{pcm_file_num})转换过程遇到其他错误")
-                    video_file_txt_obj.writelines(f"{subtitle_format}转换过程遇到其他错误\r\n")
-                video_file_txt_obj.writelines(f"\r\n")
-        video_file_txt_obj.close()
+                    video_file_srt_obj.writelines(f"{subtitle_format}转换过程遇到其他错误\r\n")
+                video_file_srt_obj.writelines(f"\r\n")
+        video_file_srt_obj.close()
