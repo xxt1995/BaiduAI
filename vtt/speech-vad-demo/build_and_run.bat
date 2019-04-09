@@ -1,5 +1,5 @@
 mkdir build
-mkdir ouput_pcm
+mkdir output_pcm
 del build\*.* /Q /F
 del output_pcm\*.* /Q /F
 cd build
